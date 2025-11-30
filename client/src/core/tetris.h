@@ -7,6 +7,7 @@
 #define TETRIS_H
 
 #include "../queue/queue.h"
+#include "input.h"
 
 #define TETRIS 4
 #define NUM_TETROMINOS 7
@@ -36,7 +37,9 @@ typedef struct
 } tetromino;
 
 // Game board
-typedef struct {
+typedef struct tetris_board {
+
+    char* name; // Board name
 
     unsigned int seed; // Game seed
 
@@ -81,6 +84,9 @@ typedef struct {
 
     } counters;
 
+
+    input_provider* input_provider;
+
     /**
      * An input queue should make sure no inputs are dropped 
      * and also useful to build a Quake3 inspired input history
@@ -105,12 +111,15 @@ extern position TETROMINOS[NUM_TETROMINOS][NUM_ORIENTATIONS][TETRIS];
  */
 extern float LEVEL_SPEED[NUM_LEVELS];
 
-void tetris_init(tetris_board* game, int rows, int cols, unsigned int seed); // Start a tetris board
+void tetris_init(tetris_board* game, int rows, int cols, unsigned int seed, char* name); // Start a tetris board
 void tetris_update(tetris_board* game, float dt);
 void tetris_destroy(tetris_board* game);
 
+// Move a tetromino
+char move_tetromino(tetris_board* game, tetromino* piece, int dx, int dy);
+
 // Index a board cell
-char index_cell(tetris_board* game, int x, int y);
+char index_cell(tetris_board* game, unsigned int x, unsigned int y);
 
 position calculate_drop_preview(tetris_board* game);
 

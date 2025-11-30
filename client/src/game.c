@@ -5,6 +5,8 @@
 
 #include "game.h"
 
+#include "core/providers/input_cpu.h"
+#include "core/providers/input_keyboard.h"
 #include "gfx/render.h"
 #include "core/input.h"
 #include "core/tetris.h"
@@ -15,19 +17,24 @@
 #define COLS 10
 
 tetris_board games[2];
+input_provider providers[2];
 
 void setup_game() {
     render_init();
 
-    for (int i = 0; i < 2; i++) {
-        tetris_board* game = &games[i];
-        tetris_init(game, ROWS, COLS, 0);
-    }
+    tetris_init(&games[0], ROWS, COLS, 0, "Sagiri");
+    init_keyboard_provider(&providers[0]);
+    games[0].input_provider = &providers[0];
+
+    tetris_init(&games[1], ROWS, COLS, 1, "CPU");
+    init_cpu_provider(&providers[1]);
+    games[1].input_provider = &providers[1];
 }
 
 void event_game(const sapp_event* event) {
     // Handle input events
-    handle_input_event(event);
+    //handle_input_event(event);
+    handle_kb_input_event(event);
 }
 
 void cleanup_game() {
@@ -44,11 +51,11 @@ void update_game() {
     float time = sapp_frame_duration();
 
     // Update the game state
-    process_input(&games[0], time);
     
     for (int i = 0; i < 2; i++) {
         tetris_board* game = &games[i];
         tetris_update(game, time);
+        process_input(game);
     }
 
     // Render the game

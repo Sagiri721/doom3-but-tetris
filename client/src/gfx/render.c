@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #define CLEAR_COLOUR_R 0.1f
 #define CLEAR_COLOUR_G 0.1f
@@ -175,6 +174,14 @@ void render_ui(tetris_board* game, unsigned int offset, unsigned int boards) {
     //     .h = 15
     // });
 
+    // Draw player name
+    bitmap_draw_string(&kc85_font, game->name, strlen(game->name), (sgp_rect){
+        .x = board_x + board_width / 2 - (strlen(game->name) * CELL_SIZE) / 2,
+        .y = board_y - CELL_SIZE,
+        .w = CELL_SIZE,
+        .h = CELL_SIZE
+    });
+
     char score_text[32];
     sprintf(score_text, "%06d", game->points);
     bitmap_draw_string(&kc85_font, score_text, strlen(score_text), (sgp_rect){
@@ -192,6 +199,17 @@ void render_ui(tetris_board* game, unsigned int offset, unsigned int boards) {
         .w = CELL_SIZE,
         .h = CELL_SIZE
     });
+
+    // Draw game over text
+    if (game->game_over) {
+        const char* game_over_text = "GAME OVER";
+        bitmap_draw_string(&kc85_font, game_over_text, strlen(game_over_text), (sgp_rect){
+            .x = board_x + board_width / 2 - (strlen(game_over_text) * CELL_SIZE) / 2,
+            .y = board_y + board_height / 2 - CELL_SIZE,
+            .w = CELL_SIZE,
+            .h = CELL_SIZE
+        });
+    }
 }
 
 void render_game(tetris_board* game, unsigned int offset, unsigned int boards) {

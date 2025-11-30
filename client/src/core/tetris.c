@@ -130,6 +130,9 @@ void attribute_score(tetris_board* game, int lines_cleared) {
         game->level = new_level;
 }
 
+/**
+ * @brief Go to a specific level
+ */
 void goto_level(tetris_board* game, int level) {
     
     assert(level >= 0);
@@ -144,12 +147,20 @@ void goto_level(tetris_board* game, int level) {
 void place_piece_at_top(tetris_board* game, tetromino* piece) {
     piece->pos.x = floor(game->cols / 2.0) - 1;
     piece->pos.y = 0;
+
+    // If spawn killed, that's all she wrote
+    if (!move_tetromino(game, piece, 0, 0)) {
+        game->game_over = 1;
+    }
 }
 
 /**
  * @brief Retrieve the next piece and place it at the top
  */
 void retrieve_next_piece(tetris_board* game) {
+
+    assert(game->board != NULL);
+
     game->current = game->next;
     game->next = get_random_piece();
     place_piece_at_top(game, &game->current);
@@ -269,10 +280,12 @@ void lock_piece(tetris_board* game, tetromino* piece) {
     game->has_held = 0;
 }
 
-void tetris_init(tetris_board* game, int rows, int cols, unsigned int seed) {
+void tetris_init(tetris_board* game, int rows, int cols, unsigned int seed, char* name) {
 
     game->seed = seed;
     srand(seed);
+
+    game->name = name;
 
     // No one is doomed from the start :)
     game->game_over = 0;
@@ -299,8 +312,6 @@ void tetris_init(tetris_board* game, int rows, int cols, unsigned int seed) {
     // Initialize input queue
     queue_init(&game->input_queue);
 
-    place_piece_at_top(game, &game->current);
-
     // Initialize field to empty
     game->board = malloc(rows * cols * sizeof(char*));
     if (game->board == NULL) {
@@ -309,6 +320,9 @@ void tetris_init(tetris_board* game, int rows, int cols, unsigned int seed) {
     }
 
     clear_board(game);
+
+    // Start game with current piece at top
+    place_piece_at_top(game, &game->current);
 }
 
 void tetris_process_input_queue(tetris_board* game, float dt) {
@@ -356,6 +370,9 @@ void tetris_process_input_queue(tetris_board* game, float dt) {
 
 void tetris_update(tetris_board* game, float dt) {
 
+    // If game over, nothing to do
+    if (game->game_over) return;
+
     game->counters.gravity_timer += dt;
 
     float speed = sample_speed_table(game);
@@ -372,11 +389,11 @@ void tetris_update(tetris_board* game, float dt) {
     tetris_process_input_queue(game, dt);
 }
 
-char index_cell(tetris_board* game, int x, int y) {
+char index_cell(tetris_board* game, unsigned int x, unsigned int y) {
     
     assert(game->board != NULL);
-    assert(x >= 0 && x <= game->cols);
-    assert(y >= 0 && y <= game->rows);
+    assert(x <= game->cols);
+    assert(y <= game->rows);
 
     return game->board[x * game->rows + y];
 }

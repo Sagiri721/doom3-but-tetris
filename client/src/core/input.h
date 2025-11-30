@@ -6,8 +6,10 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#include "tetris.h"
 #include "../queue/queue.h"
+
+struct tetris_board;
+struct sapp_event;
 
 /** 
  * Following Carmack's philosophy of input, i like the idea
@@ -18,44 +20,25 @@ typedef enum {
 } input_event_type;
 
 /**
- * Raw input table mapping
- * If key is pressed, the corresponding field is set to 1
- * if key is not pressed, the corresponding field is set to 0
+ * Who implements the input
  */
+typedef enum {
+    INPUT_PROVIDER_KEYBOARD,
+    INPUT_PROVIDER_CPU,
+} input_provider_type;
+
+// Function signature for input providers
+typedef void (*input_provider_func)(struct tetris_board* game);
+
+// Input provider structure
 typedef struct {
-    char left;
-    char right;
-    char down;
-    char lrotate;
-    char rrotate;
-    char reset;
-    char drop;
-    char hold;
-} input_table;
+    input_provider_type type;
+    input_provider_func process_fn;
+} input_provider;
 
-/**
- * Input edge table mapping
- * If key is pressed, the corresponding field is set to 1 for one check
- * and only resets to 0 when key is released
- */
-typedef struct {
-    char left_edge;
-    char right_edge;
-    char down_edge;
-    char lrotate_edge;
-    char rrotate_edge;
-    char reset_edge;
-    char drop_edge;
-    char hold_edge;
-} input_edge_table;
-
-struct sapp_event;
-
-// Process raw sokol events
-void handle_input_event(const struct sapp_event* event);
-// Process the input table and make the required events
-void process_input(tetris_board* game, float dt);
+// Dispatch input processing to the appropriate input provider
+void process_input(struct tetris_board* game);
 // Register an input event into the input queue
-void register_input(int action, tetris_board* game);
+void register_input(int action, struct tetris_board* game);
 
 #endif
