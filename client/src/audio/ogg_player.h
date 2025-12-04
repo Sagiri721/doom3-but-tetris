@@ -33,6 +33,12 @@ typedef struct {
 
     // The thread that streams audio
     thrd_t audio_thread;
+    mtx_t mutex;
+    cnd_t cond;
+
+    volatile char should_stop;
+    char running;
+
 } ogg_audio_player;
 
 void audio_init(ogg_audio_player* player, int push_slack_ms, char loop);

@@ -28,8 +28,25 @@ int push_loop(void* args) {
     float frames_buffer[4096 * 2];
     float* buffer = frames_buffer;
 
-    while (!player->finished)
+    mtx_lock(&player->mutex);
+    player->running = 1;
+    mtx_unlock(&player->mutex);
+
+    while (1)
     {
+        mtx_lock(&player->mutex);
+        if (player->should_stop) {
+            player->running = 0;
+            cnd_signal(&player->cond);
+            mtx_unlock(&player->mutex);
+            break;
+        }
+
+        mtx_unlock(&player->mutex);
+
+        if (player->finished)
+            break;
+
         int delay = player->push_slack_ms;
         int expected_frames = saudio_expect();
         if (expected_frames > 0) {
@@ -60,6 +77,7 @@ int push_loop(void* args) {
                     samples
                 );
                 decoded_frames += written_frames;
+
                 player->pos += samples;
             }
             
@@ -81,6 +99,16 @@ int push_loop(void* args) {
 
 void push_ogg_file(ogg_audio_player* player, const char* path) {
     
+    mtx_lock(&player->mutex);
+    player->should_stop = 1;
+    mtx_unlock(&player->mutex);
+
+    // Wait for thread to stop
+    mtx_lock(&player->mutex);
+    while (player->running)
+        cnd_wait(&player->cond, &player->mutex);
+    mtx_unlock(&player->mutex);
+
     close_decoder(player);
 
     // Load ogg file
@@ -90,8 +118,11 @@ void push_ogg_file(ogg_audio_player* player, const char* path) {
         exit(1);
     }
 
+    mtx_lock(&player->mutex);
     player->finished = 0;
     player->pos = 0;
+    player->should_stop = 0;
+    mtx_unlock(&player->mutex);
 
     // Inform player of file info
     stb_vorbis_info info = stb_vorbis_get_info(player->vorbis);
@@ -122,7 +153,6 @@ void push_ogg_file(ogg_audio_player* player, const char* path) {
     
     // Start audio thread
     thrd_create(&player->audio_thread, push_loop, player);
-    thrd_detach(player->audio_thread);
 }
 
 void audio_init(ogg_audio_player* player, int push_slack_ms, char loop) {
@@ -137,13 +167,26 @@ void audio_init(ogg_audio_player* player, int push_slack_ms, char loop) {
         .alloc_buffer = calloc(1, alloc_size),
         .alloc_buffer_length_in_bytes = alloc_size
     };
+
+    mtx_init(&player->mutex, mtx_plain);
+    cnd_init(&player->cond);
+    
+    player->should_stop = 0;
+    player->running = 0;
 }
 
 void audio_destroy(ogg_audio_player *player) {
 
-    player->finished = 1;
-    player->pos = 0;
+    mtx_lock(&player->mutex);
+    player->should_stop = 1;
+    mtx_unlock(&player->mutex);
+
+    // Join thread
+    thrd_join(player->audio_thread, NULL);
 
     close_decoder(player);
     free(player->alloc->alloc_buffer);
+
+    mtx_destroy(&player->mutex);
+    cnd_destroy(&player->cond);
 }
