@@ -11,12 +11,15 @@
 #define STB_VORBIS_HEADER_ONLY
 #include "stb_vorbis.c" // I DIDNT KNOW YOU COULD DO THIS !????
 
+#include "../lib/tinycthread.h"
+
 typedef struct {
     int channels;
-    int sample_rate;
+    unsigned int sample_rate;
 
     int pos;
     char finished;
+    char loop;
 
     int push_slack_ms;
 
@@ -27,11 +30,14 @@ typedef struct {
 
     stb_vorbis_alloc* alloc;
     stb_vorbis* vorbis;
+
+    // The thread that streams audio
+    thrd_t audio_thread;
 } ogg_audio_player;
 
-void audio_init(ogg_audio_player* player, int push_slack_ms);
+void audio_init(ogg_audio_player* player, int push_slack_ms, char loop);
 void audio_destroy(ogg_audio_player* player);
 
-void stream_ogg_file(ogg_audio_player* player, const char* path);
+void push_ogg_file(ogg_audio_player* player, const char* path);
 
 #endif

@@ -28,6 +28,7 @@ SOURCES = \
 	src/gfx/menu.c \
 	src/audio/stb_vorbis.c \
 	src/audio/ogg_player.c \
+	src/lib/tinycthread.c \
 
 main:
 	zig cc $(SOURCES) -o build/$(TARGET).exe $(LDFLAGS) $(FLAGS)

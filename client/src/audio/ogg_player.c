@@ -21,7 +21,65 @@ void close_decoder(ogg_audio_player* player) {
     }
 }
 
-void stream_ogg_file(ogg_audio_player* player, const char* path) {
+int push_loop(void* args) {
+
+    ogg_audio_player* player = (ogg_audio_player*) args;
+    
+    float frames_buffer[4096 * 2];
+    float* buffer = frames_buffer;
+
+    while (!player->finished)
+    {
+        int delay = player->push_slack_ms;
+        int expected_frames = saudio_expect();
+        if (expected_frames > 0) {
+            int decoded_frames = 0;
+            while (decoded_frames < expected_frames) {
+                
+                int samples = stb_vorbis_get_samples_float_interleaved(
+                    player->vorbis, 
+                    player->channels, 
+                    buffer,
+                    1024
+                );
+
+                if (samples == 0) {
+
+                    if (player->loop) {
+                        stb_vorbis_seek_start(player->vorbis);
+                        player->pos = 0;
+                        continue;
+                    }
+
+                    player->finished = 1;
+                    break;
+                }
+
+                int written_frames = saudio_push(
+                    buffer,
+                    samples
+                );
+                decoded_frames += written_frames;
+                player->pos += samples;
+            }
+            
+            delay = (1000 * decoded_frames) / player->sample_rate;
+        }
+
+        // printf("\r position: %.2f / %.2f seconds ", 
+        //     (float)player->pos / player->sample_rate, 
+        //     player->stream_len_seconds
+        // );
+        struct timespec duration = {
+            .tv_sec = max(player->push_slack_ms, delay - player->push_slack_ms) / 1000,
+        };
+        thrd_sleep(&duration, NULL);
+    }
+
+    thrd_exit(0);
+}
+
+void push_ogg_file(ogg_audio_player* player, const char* path) {
     
     close_decoder(player);
 
@@ -61,54 +119,18 @@ void stream_ogg_file(ogg_audio_player* player, const char* path) {
         player->stream_channels, 
         player->stream_len_seconds
     );
-
-    float frames_buffer[4096 * 2];
-    float* buffer = frames_buffer;
-
-    while (!player->finished)
-    {
-        int delay = player->push_slack_ms;
-        int expected_frames = saudio_expect();
-        if (expected_frames > 0) {
-            int decoded_frames = 0;
-            while (decoded_frames < expected_frames) {
-                
-                int samples = stb_vorbis_get_samples_float_interleaved(
-                    player->vorbis, 
-                    player->channels, 
-                    buffer,
-                    1024
-                );
-
-                if (samples == 0) {
-                    player->finished = 1;
-                    break;
-                }
-
-                int written_frames = saudio_push(
-                    buffer,
-                    samples
-                );
-                decoded_frames += written_frames;
-                player->pos += samples;
-            }
-            
-            delay = (1000 * decoded_frames) / player->sample_rate;
-        }
-
-        printf("\r position: %.2f / %.2f seconds ", 
-            (float)player->pos / player->sample_rate, 
-            player->stream_len_seconds
-        );
-    }
     
+    // Start audio thread
+    thrd_create(&player->audio_thread, push_loop, player);
+    thrd_detach(player->audio_thread);
 }
 
-void audio_init(ogg_audio_player* player, int push_slack_ms) {
+void audio_init(ogg_audio_player* player, int push_slack_ms, char loop) {
 
     player->sample_rate = saudio_sample_rate();
     player->channels = saudio_channels();
     player->push_slack_ms = push_slack_ms;
+    player->loop = loop;
 
     size_t alloc_size = 200 * 1024; //? why
     player->alloc = &(stb_vorbis_alloc){

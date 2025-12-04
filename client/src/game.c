@@ -5,6 +5,7 @@
 
 #include "game.h"
 
+#include "audio/ogg_player.h"
 #include "core/providers/input_cpu.h"
 #include "core/providers/input_keyboard.h"
 #include "core/rng.h"
@@ -127,7 +128,12 @@ menu main_menu = {
     .selected_index = 0,
 };
 
+ogg_audio_player player;
+
 void setup_game() {
+
+    audio_init(&player, 100, 1);
+    push_ogg_file(&player, "res/audio/theme.ogg");
 
     render_init();
     menu_push(&main_menu);
@@ -147,6 +153,7 @@ void cleanup_game() {
     }
 
     render_destroy();
+    audio_destroy(&player);
 }
 
 void update_game() {

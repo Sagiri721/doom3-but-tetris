@@ -20,12 +20,9 @@
 #include <math.h>
 
 #include "game.h"
-#include "audio/ogg_player.h"
 
 #define TARGET_WINDOW_WIDTH 1280
 #define TARGET_WINDOW_HEIGHT 720
-
-ogg_audio_player player;
 
 // Called on every frame of the application.
 static void frame(void) {
@@ -55,11 +52,10 @@ static void init(void) {
     }
 
     // Setup audio
-    saudio_desc saudiodesc = {0};
-    saudio_setup(&saudiodesc);
-
-    audio_init(&player, 0);
-    stream_ogg_file(&player, "res/audio/theme.ogg");
+    saudio_setup(&(saudio_desc){
+        .logger.func = slog_func,
+    });
+    assert(saudio_channels() == 1);
 
     setup_game();
 }
@@ -73,7 +69,6 @@ static void input(const sapp_event* event) {
 static void cleanup(void) {
 
     cleanup_game();
-    audio_destroy(&player);
 
     // Cleanup Sokol GP and Sokol GFX resources.
     saudio_shutdown();
