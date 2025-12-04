@@ -73,6 +73,13 @@ void menu_execute_selected(menu* m) {
     }
 }
 
+void update_number(number_action_desc* n, int dx) {
+
+    if (*n->value + dx > n->upper) *n->value = n->upper;
+    else if (*n->value + dx < n->lower) *n->value = n->lower;
+    else *n->value += dx;
+}
+
 void process_menu_keyboard_state(menu* menu) {
     
     if (is_edge_pressed(g_input.ui_down, &fired.ui_down_edge))
@@ -86,6 +93,13 @@ void process_menu_keyboard_state(menu* menu) {
 
     if (is_edge_pressed(g_input.ui_back, &fired.ui_back_edge)) 
         menu_pop();
+
+    if (menu->items[menu->selected_index].type == MA_NUMBER) {
+        if (is_edge_pressed(g_input.ui_left, &fired.ui_left_edge)) 
+            update_number(menu->items[menu->selected_index].action.number, -1);
+        if (is_edge_pressed(g_input.ui_right, &fired.ui_right_edge)) 
+            update_number(menu->items[menu->selected_index].action.number, 1);
+    }
 }
 
 void menu_update(menu* m) {

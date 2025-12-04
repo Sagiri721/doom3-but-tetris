@@ -29,6 +29,8 @@ typedef struct {
 
     char ui_down;
     char ui_up;
+    char ui_left;
+    char ui_right;
     char ui_select;
     char ui_back;
 } input_table;
@@ -50,6 +52,8 @@ typedef struct {
 
     char ui_down_edge;
     char ui_up_edge;
+    char ui_left_edge;
+    char ui_right_edge;
     char ui_select_edge;
     char ui_back_edge;
 } input_edge_table;

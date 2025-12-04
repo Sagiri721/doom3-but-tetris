@@ -22,5 +22,5 @@ void greedy_score(tetris_board* board, move_candidate* candidate) {
     // But include y level so that if there are 
     // no possible line clears this turn, play something that maybe 
     // gets you closer to a line clear next turn
-    candidate->score = (float) lines_cleared * 1000.0f + (float) candidate->pos.y;
+    candidate->score = (float) lines_cleared * 1000.0f + (float) candidate->t.pos.y;
 }

@@ -81,14 +81,18 @@ float LEVEL_SPEED[NUM_LEVELS] = {
  */
 tetromino get_random_piece(tetris_board* game) {
 
-    unsigned int rand_value;
-    rng_step(&game->rng, &rand_value);
-
-    int r = rand_value % NUM_TETROMINOS;
+    int r = rng_step(&game->rng) % NUM_TETROMINOS;
     return (tetromino) {
         .rot = 0,
         .type = r
     };
+}
+
+/**
+ * @brief Peek at the next n-th tetromino type
+ */
+tetromino_type tetris_peek_next(tetris_board *game, unsigned int n) {
+    return rng_peek(&game->rng, n) % NUM_TETROMINOS;
 }
 
 /**
@@ -138,9 +142,7 @@ void attribute_score(tetris_board* game, int lines_cleared) {
 /**
  * @brief Go to a specific level
  */
-void goto_level(tetris_board* game, int level) {
-    
-    assert(level >= 0);
+void tetris_goto_level(tetris_board* game, unsigned level) {
 
     game->level = level;
     game->stats.lines_cleared = level * game->level_goal;
@@ -196,7 +198,7 @@ void clear_row(tetris_board* game, unsigned int row) {
     assert(row >= 0 && row < game->rows);
 
     // Clear the row
-    for (int x = 0; x < game->rows; x++) {
+    for (size_t x = 0; x < game->rows; x++) {
         game->board[x * game->rows + row] = 0;
     }
 
@@ -285,6 +287,45 @@ void lock_piece(tetris_board* game, tetromino* piece) {
     game->has_held = 0;
 }
 
+void push_line_to_bottom(tetris_board* game, char* line) {
+
+    assert(game->board != NULL);
+
+    // Move all rows up by one
+    for (size_t y = 0; y < game->rows - 1; y++) {
+        for (size_t x = 0; x < game->cols; x++) {
+            game->board[x * game->rows + y] = game->board[x * game->rows + (y + 1)];
+        }
+    }
+
+    // Insert new line at the bottom
+    for (size_t x = 0; x < game->cols; x++) {
+        game->board[x * game->rows + (game->rows - 1)] = line[x];
+    }
+}
+
+/**
+ * @brief Add garbage lines at the bottom of the board
+ */
+void add_garbage(tetris_board* game, unsigned int lines, rng_table* rng) {
+
+    assert(game->board != NULL);
+    assert(lines < game->rows && lines > 0);
+
+    for (size_t i = 0; i < lines; i++) {
+
+        char garbage[game->cols];
+        unsigned int hole_index = rng_step(rng) % game->cols;
+
+        for (size_t j = 0; j < game->cols; j++) {
+            if (j == hole_index) garbage[j] = 0;
+            else garbage[j] = TET_GARBAGE;
+        }
+
+        push_line_to_bottom(game, garbage);
+    }
+}
+
 void tetris_init(tetris_board* game, int rows, int cols, unsigned int seed, char* name) {
 
     // Initialize RNG
@@ -300,7 +341,7 @@ void tetris_init(tetris_board* game, int rows, int cols, unsigned int seed, char
 
     game->points = 0;
     game->level_goal = 10;
-    goto_level(game, 5);
+    game->level = 1;
 
     game->has_hold = 0;
     game->current = get_random_piece(game);
@@ -313,6 +354,9 @@ void tetris_init(tetris_board* game, int rows, int cols, unsigned int seed, char
     game->counters.drop_timer = 0.0f;
     game->counters.rotations_tried = 0;
     game->counters.old_rot = 0;
+
+    // Initialize settings
+    game->settings.preview_count = 3;
 
     // Initialize input queue
     queue_init(&game->input_queue);

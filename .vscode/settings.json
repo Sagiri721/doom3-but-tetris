@@ -5,7 +5,9 @@
     "tetris.h": "c",
     "queue.h": "c",
     "sokol_app.h": "c",
-    "input_cpu.h": "c"
+    "input_cpu.h": "c",
+    "sokol_gfx.h": "c",
+    "ogg_player.h": "c"
   },
   "C_Cpp_Runner.msvcBatchPath": "",
   "C_Cpp_Runner.cCompilerPath": "gcc",

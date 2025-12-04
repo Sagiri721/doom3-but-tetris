@@ -25,14 +25,15 @@
 
 #define CELL_SIZE 32
 
-float COLOURS[NUM_TETROMINOS][3] = {
-    {1, 0, 0},          // Red
-    {0, 1, 0},          // Green
-    {0, 0, 1},          // Blue
-    {1, 1, 0},          // Yellow
-    {1, 0.5, 0},        // Orange
-    {0.5f, 0, 0.5f},    // Purple
-    {0, 1, 1}           // Cyan
+float COLOURS[NUM_TETROMINOS + 1][3] = {
+    {1, 0, 0},          // Red      (I)
+    {0, 1, 0},          // Green    (J)
+    {0, 0, 1},          // Blue     (L)
+    {1, 1, 0},          // Yellow   (O)
+    {1, 0.5, 0},        // Orange   (Z)
+    {0.5f, 0, 0.5f},    // Purple   (T)
+    {0, 1, 1},          // Cyan     (S)
+    {0.3, 0.3, 0.3}     // Grey     (Garbage)
 };
 
 // KC85 font character set
@@ -122,6 +123,8 @@ void render_end() {
 void render_cell(float x, float y, int type, float alpha) {
     
     // Get color based on tetromino type
+    if (type == 8)
+        printf("Rendering cell of type 8 at (%f, %f)\n", x, y);
     float r = COLOURS[type][0];
     float g = COLOURS[type][1];
     float b = COLOURS[type][2];
@@ -278,12 +281,15 @@ void render_game(tetris_board* game, unsigned int offset, unsigned int boards) {
     sgp_set_blend_mode(SGP_BLENDMODE_ADD);
     render_tetromino(phantom, board_x, board_y, 0.3f);
 
-    // Draw next piece
-    render_tetromino((tetromino){
-        .type = game->next.type,
-        .rot = 0,
-        .pos = (position){.x = game->cols + 1, .y = 1}
-    }, board_x, board_y, 1.0f);
+    // Draw next piece(s)
+    for (size_t i = 0; i < game->settings.preview_count; i++) {
+        unsigned int next_type = tetris_peek_next(game, i);
+        render_tetromino((tetromino){
+            .type = next_type,
+            .rot = 0,
+            .pos = (position){.x = -3, .y = 1 + (i * 4)}
+        }, board_x, board_y, 1.0f);
+    }
 
     sgp_set_blend_mode(SGP_BLENDMODE_NONE);
 
@@ -292,7 +298,7 @@ void render_game(tetris_board* game, unsigned int offset, unsigned int boards) {
         render_tetromino((tetromino){
             .type = game->hold.type,
             .rot = 0,
-            .pos = (position){.x = game->cols + 1, .y = 6}
+            .pos = (position){.x = game->cols + 1, .y = 1}
         }, board_x, board_y, 1.0f);
     }
 
@@ -311,11 +317,29 @@ void render_menu(const menu *m) {
     for (size_t i = 0; i < m->item_count; i++) {
         
         menu_item item = m->items[i];
-        char render_text[MAX_LABEL_LENGTH + 4];
+        char render_text[MAX_LABEL_LENGTH + 3 + 16];
 
-        // Cursor indicator
-        if (i == m->selected_index) sprintf(render_text, "=> %s", item.label);
-        else sprintf(render_text, "%s", item.label);
+        switch (m->items[i].type)
+        {
+            case MA_SUBMENU:
+            case MA_CALLBACK:
+                // Cursor indicator
+                if (i == m->selected_index) sprintf(render_text, "=> %s", item.label);
+                else sprintf(render_text, "%s", item.label);
+                
+                break;
+
+            case MA_NUMBER:
+                sprintf(render_text, "%s", item.label);
+
+                // Display number as well
+                char number_text[16];
+                if (i == m->selected_index) sprintf(number_text, ": >%d<", *(m->items[i].action.number->value));
+                else sprintf(number_text, ": %d", *(m->items[i].action.number->value));
+                //strcat(render_text, number_text);
+                strcat_s(render_text, sizeof(render_text), number_text);
+                break;
+        }
 
         size_t len = strlen(render_text);
         bitmap_draw_string(&kc85_font, render_text, len, (sgp_rect){
@@ -325,6 +349,44 @@ void render_menu(const menu *m) {
             .h = CELL_SIZE
         });
     }
+
+    sgp_reset_color();
+    sgp_reset_blend_mode();
+    sgp_reset_image(0);
+}
+
+void render_titlescreen(float dt) {
+
+    static char title_string[] = "NETRIS NETRIS NETRIS NETRIS NETRIS NETRIS NETRIS";
+    static size_t len = 48;
+    static float x = 0;
+
+    sgp_set_image(0, kc85_font.desc.img);
+    sgp_set_blend_mode(SGP_BLENDMODE_ADD_PREMULTIPLIED);
+
+    for (size_t i = 0; i <= 2; i++) {
+
+        if (i == 0) sgp_set_color(1.0f, 0.0f, 0.0f, 1.0f);
+        else if (i == 1) sgp_set_color(1.0f, 0.5f, 0.5f, 1.0f);
+        else sgp_set_color(1.0f, 1.0f, 1.0f, 1.0f);
+
+        bitmap_draw_string(&kc85_font, title_string, len, (sgp_rect){
+            .x = x - CELL_SIZE,
+            .y = (height / 4.0f) - i * 2.0f,
+            .w = CELL_SIZE,
+            .h = CELL_SIZE
+        });
+
+        bitmap_draw_string(&kc85_font, title_string, len, (sgp_rect){
+            .x = x + 1532,
+            .y = (height / 4.0f) - i * 2.0f,
+            .w = CELL_SIZE,
+            .h = CELL_SIZE
+        });
+    }
+
+    x -= dt * 130;
+    if (x < -1532) x = CELL_SIZE;
 
     sgp_reset_color();
     sgp_reset_blend_mode();

@@ -10,8 +10,7 @@
 
 // A potential candidate for the best move
 typedef struct {
-    position pos;
-    int rot;
+    tetromino t;
     float score;
 } move_candidate;
 

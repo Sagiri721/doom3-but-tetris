@@ -15,6 +15,11 @@ void rng_init(rng_table* table, unsigned int seed);
 /**
  * Get the current random number from the RNG table
  */
-void rng_step(rng_table* table, unsigned int* out_value);
+unsigned int rng_step(rng_table* table);
+
+/**
+ * Peek ahead on the rng table
+ */
+unsigned int rng_peek(rng_table* table, unsigned int steps_ahead);
 
 #endif

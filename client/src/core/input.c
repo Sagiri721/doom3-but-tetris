@@ -35,9 +35,15 @@ void handle_kb_input_event(const sapp_event* event) {
 
         switch (event->key_code) {
             case SAPP_KEYCODE_A:
-            case SAPP_KEYCODE_LEFT: g_input.left   = pressed; break;
+            case SAPP_KEYCODE_LEFT: 
+                g_input.left   = pressed; 
+                g_input.ui_left = pressed;
+                break;
             case SAPP_KEYCODE_D: 
-            case SAPP_KEYCODE_RIGHT: g_input.right  = pressed; break;
+            case SAPP_KEYCODE_RIGHT: 
+                g_input.right  = pressed; 
+                g_input.ui_right  = pressed; 
+                break;
             case SAPP_KEYCODE_S: 
             case SAPP_KEYCODE_DOWN: 
                 g_input.down   = pressed; 

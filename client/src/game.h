@@ -9,8 +9,6 @@
 // Game menus
 #include "gfx/menu.h"
 
-extern menu main_menu, game_menu;
-
 struct sapp_event;
 
 void setup_game();

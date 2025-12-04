@@ -1,4 +1,3 @@
-#include "core/rng.h"
 #define SOKOL_IMPL
 #if defined (_WIN32)
     #define SOKOL_D3D11
@@ -14,15 +13,19 @@
 #include "sokol_gp/thirdparty/sokol_app.h"
 #include "sokol_gp/thirdparty/sokol_glue.h"
 #include "sokol_gp/thirdparty/sokol_log.h"
+#include "sokol_gp/thirdparty/sokol_audio.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
 #include "game.h"
+#include "audio/ogg_player.h"
 
 #define TARGET_WINDOW_WIDTH 1280
 #define TARGET_WINDOW_HEIGHT 720
+
+ogg_audio_player player;
 
 // Called on every frame of the application.
 static void frame(void) {
@@ -51,6 +54,13 @@ static void init(void) {
         exit(EXIT_FAILURE);
     }
 
+    // Setup audio
+    saudio_desc saudiodesc = {0};
+    saudio_setup(&saudiodesc);
+
+    audio_init(&player, 0);
+    stream_ogg_file(&player, "res/audio/theme.ogg");
+
     setup_game();
 }
 
@@ -63,8 +73,10 @@ static void input(const sapp_event* event) {
 static void cleanup(void) {
 
     cleanup_game();
+    audio_destroy(&player);
 
     // Cleanup Sokol GP and Sokol GFX resources.
+    saudio_shutdown();
     sgp_shutdown();
     sg_shutdown();
 }

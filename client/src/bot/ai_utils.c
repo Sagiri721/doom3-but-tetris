@@ -40,7 +40,7 @@ void make_pseudo_board(tetris_board* board, char* temp_board, move_candidate* ca
     memcpy(temp_board, board->board, board->rows * board->cols);
 
     tetromino test_piece = board->current;
-    test_piece.pos = candidate->pos;
-    test_piece.rot = candidate->rot;
+    test_piece.pos = candidate->t.pos;
+    test_piece.rot = candidate->t.rot;
     pseudo_place_tetromino(temp_board, board->rows, board->cols, &test_piece);
 }

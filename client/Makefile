@@ -25,7 +25,9 @@ SOURCES = \
 	src/bot/heuristics/greedy_score.c \
 	src/bot/heuristics/weighted_score.c \
 	src/bot/ai_utils.c \
-	src/gfx/menu.c
+	src/gfx/menu.c \
+	src/audio/stb_vorbis.c \
+	src/audio/ogg_player.c \
 
 main:
 	zig cc $(SOURCES) -o build/$(TARGET).exe $(LDFLAGS) $(FLAGS)

@@ -20,13 +20,21 @@ typedef struct {
 } menu_stack;
 
 typedef enum {
-    MA_CALLBACK, MA_SUBMENU
+    MA_CALLBACK, MA_SUBMENU, MA_NUMBER
 } menu_action_type;
+
+typedef struct {
+    int lower;
+    int upper;
+
+    int* value;
+} number_action_desc;
 
 /**
  * A menu item is a label with functionality
  * We use a union to store either a callback function or a submenu pointer
- * If it is a callback, the type is MA_CALLBACK and the callback function is used on select
+ * If it's a MA_NUMBER we set the value with the number controls,
+ * if it is a callback, the type is MA_CALLBACK and the callback function is used on select
  * otherwise we push the submenu onto the menu stack
  */
 typedef struct {
@@ -36,6 +44,7 @@ typedef struct {
     union {
         void (*callback)();
         struct menu_s* submenu;
+        number_action_desc* number;
     } action;
     
 } menu_item;

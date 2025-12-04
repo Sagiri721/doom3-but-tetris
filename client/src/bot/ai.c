@@ -28,8 +28,11 @@ void get_all_possible_positions_for_rotation(tetris_board* game, tetromino* piec
 
         // Evaluate this position
         move_candidate current = {
-            .pos = testing_position,
-            .rot = test_piece.rot,
+            .t = {
+                .type = test_piece.type,
+                .rot = test_piece.rot,
+                .pos = testing_position
+            },
             .score = 0.0f
         };
 
@@ -45,9 +48,7 @@ void get_all_possible_positions_for_rotation(tetris_board* game, tetromino* piec
     }
 }
 
-void get_all_possible_positions(tetris_board* game, evaluation_function eval, move_candidate* result) {
-
-    tetromino piece = game->current;
+void get_all_possible_positions(tetris_board* game, tetromino piece, evaluation_function eval, move_candidate* result) {
 
     // Test all 4 rotations
     for (int i = 0; i < 4; i++) {
@@ -60,11 +61,10 @@ void get_all_possible_positions(tetris_board* game, evaluation_function eval, mo
 move_candidate decide_next_move(tetris_board* game) {
 
     move_candidate best = {
-        .pos = {0, 0},
-        .rot = 0,
+        .t = {0},
         .score = -INFINITY
     };
 
-    get_all_possible_positions(game, &weighted_score, &best);
+    get_all_possible_positions(game, game->current, &weighted_score, &best);
     return best;
 }

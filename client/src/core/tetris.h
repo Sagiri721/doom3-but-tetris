@@ -17,7 +17,7 @@
 #define NUM_LEVELS 19 + 1
 
 typedef enum {
-    TET_I, TET_J, TET_L, TET_O, TET_S, TET_T, TET_Z
+    TET_I = 1, TET_J = 2, TET_L = 3, TET_O = 4, TET_S = 5, TET_T = 6, TET_Z = 7, TET_GARBAGE = 8
 } tetromino_type;
 
 typedef enum {
@@ -95,6 +95,11 @@ typedef struct tetris_board {
      */
     queue input_queue;
 
+    // Game settings
+    struct {
+        unsigned int preview_count;
+    } settings;
+
 } tetris_board;
 
 /*
@@ -122,8 +127,18 @@ char move_tetromino(tetris_board* game, tetromino* piece, int dx, int dy);
 // Index a board cell
 char index_cell(const tetris_board* game, unsigned int x, unsigned int y);
 
+// Find the nth next piece
+tetromino_type tetris_peek_next(tetris_board* game, unsigned int n);
+
 // Calculate the lowest position the current piece can drop to
 position calculate_drop_preview(tetromino* piece, tetris_board* game);
+
+// Add garbage lines to the bottom of the board
+// Rng goes seperate because it would offset the piece generation otherwise
+void add_garbage(tetris_board* game, unsigned int lines, rng_table* rng);
+
+// Goto a specific level
+void tetris_goto_level(tetris_board* game, unsigned int level);
 
 // Events
 void tetris_apply_gravity(tetris_board* game);
