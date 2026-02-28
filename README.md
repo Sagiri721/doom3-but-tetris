@@ -12,6 +12,13 @@ A tetris game in C with sokol gp inspired by Doom 3 architecture
 **Steps:**
 
 1. After cloning, run `git submodule update --init --recursive` to include [sokol_gp](https://github.com/edubart/sokol_gp)
+2. Add [sokol_audio.h](https://github.com/floooh/sokol/blob/master/sokol_audio.h) to `client\src\sokol_gp\thirdparty`
+2. (if needed) You may need to download graphics backends (X11, Opengl, et al.) and audio drivers (asla)
+3. `cd game` ; `make`
+4. `cd client` ; `make`
+5. `.\client\build\app.exe` || `.\client\build\app`
+
+**Note**: Makefiles are platform independent (not tested on mac)
 
 ## Features
 - Seperate game core and client implementation
@@ -20,6 +27,7 @@ A tetris game in C with sokol gp inspired by Doom 3 architecture
 - Custom ogg player (on top of stb)
 - Menu stack
 - Multi threading (render & audio)
+- Basic (but extensible) Tetris AI and input providing
 
 ### Goals
 1. Doom 3 style server-client bots
