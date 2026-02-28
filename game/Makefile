@@ -1,34 +1,38 @@
 CC = zig cc
 CFLAGS = -O2 -fPIC
 
+# Detect OS
+ifeq ($(OS),Windows_NT)
+    RM = rmdir /s /q
+    MKDIR = mkdir
+    CP = xcopy /e /i /y
+    SEP = \\
+    LIB_EXT = dll
+else
+    RM = rm -rf
+    MKDIR = mkdir -p
+    CP = cp -r
+    SEP = /
+    LIB_EXT = so
+endif
+
 # Source files
-SRCS = core\tetris.c core\input.c core\rng.c core\queue\queue.c
+SRCS = core/tetris.c core/input.c core/rng.c core/queue/queue.c
 
+# Build
 BUILD_DIR = build
+OUT_DIR = $(BUILD_DIR)/$(LIB_EXT)
 
-# Output
-LIB_WINDOWS = libgame_core.dll
-LIB_LINUX = libgame_core.so
+LIB_NAME = libgame_core.$(LIB_EXT)
 
-all: windows linux
+all: $(LIB_NAME)
 
-windows: $(LIB_WINDOWS)
-	xcopy $(BUILD_DIR)\win ..\client\game_core\win /s /e /y
-
-linux: $(LIB_LINUX) 
-	xcopy  $(BUILD_DIR)\linux ..\client\game_core\linux /s /e /y
-
-$(LIB_LINUX): $(SRCS) $(BUILD_DIR)
-	$(CC) $(CFLAGS) -shared -o $(BUILD_DIR)\linux\$(LIB_LINUX) $(SRCS)
-
-$(LIB_WINDOWS): $(SRCS) $(BUILD_DIR)
-	$(CC) $(CFLAGS) -shared -o $(BUILD_DIR)\win\$(LIB_WINDOWS) $(SRCS)
-
-$(BUILD_DIR):
-	mkdir $(BUILD_DIR)\win
-	mkdir $(BUILD_DIR)\linux
+$(LIB_NAME): $(SRCS)
+	$(MKDIR) $(OUT_DIR)
+	$(CC) $(CFLAGS) -shared -o $(OUT_DIR)/$(LIB_NAME) $(SRCS)
+	$(CP) $(OUT_DIR) ..$(SEP)client$(SEP)game_core$(SEP)$(LIB_EXT)
 
 clean:
-	rm -f $(LIB)
+	$(RM) $(BUILD_DIR)
 
-.PHONY: clean
+.PHONY: all clean

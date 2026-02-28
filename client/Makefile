@@ -2,18 +2,34 @@ GAME_CORE_LIB = ./game_core
 CORE_FOLDER=../game/core
 
 ifeq ($(OS),Windows_NT)
+    EXE_EXT = .exe
+    LIB_DIR = win
+    LIB_EXT = dll
     LDFLAGS = -lgdi32 -lole32 -ld3d11 -ldxgi
-	GAME_CORE_LINK = $(GAME_CORE_LIB)/win/libgame_core.dll
+    RM = del /Q
+    MKDIR = if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
+    RUN = $(BUILD_DIR)/$(TARGET).exe
 else ifeq ($(shell uname -s),Darwin)
+    EXE_EXT =
+    LIB_DIR = mac
+    LIB_EXT = dylib
     LDFLAGS = -framework Cocoa -framework QuartzCore -framework Metal -framework MetalKit
-# Nope, not implemented yet
+    RM = rm -f
+    MKDIR = mkdir -p $(BUILD_DIR)
+    RUN = ./$(BUILD_DIR)/$(TARGET)
 else
+    EXE_EXT =
+    LIB_DIR = linux
+    LIB_EXT = so
     LDFLAGS = -lGL -lX11 -lXi -lXcursor -lpthread -lm -ldl
-	GAME_CORE_LINK = $(GAME_CORE_LIB)/linux/libgame_core.so
+    RM = rm -f
+    MKDIR = mkdir -p $(BUILD_DIR)
+    RUN = ./$(BUILD_DIR)/$(TARGET)
 endif
 
 FLAGS = -Wall -Wextra
 TARGET = app
+BUILD_DIR = build
 
 SOURCES = \
     src/main.c \
@@ -34,14 +50,17 @@ SOURCES = \
 	src/audio/ogg_player.c \
 	src/lib/tinycthread.c \
 
+GAME_CORE_PATH = $(GAME_CORE_LIB)/$(LIB_DIR)
+GAME_CORE_LINK = -L$(GAME_CORE_PATH) -lgame_core
+
 main:
-	zig cc $(SOURCES) -I$(CORE_FOLDER) -o build/$(TARGET).exe $(FLAGS) $(GAME_CORE_LINK) $(LDFLAGS)
-	$(COPY_DLL)
+	$(MKDIR)
+	zig cc $(SOURCES) -I$(CORE_FOLDER) -o $(BUILD_DIR)/$(TARGET)$(EXE_EXT) $(FLAGS) $(GAME_CORE_LINK) $(LDFLAGS)
 
 run: main
-	./build/app.exe
+	$(RUN)
 
 clean:
-	del build\* /Q
+	$(RM) $(BUILD_DIR)/*
 
-.PHONY: main run clean build_dir
+.PHONY: main run clean
