@@ -19,7 +19,7 @@ else
 endif
 
 # Source files
-SRCS = core/tetris.c core/input.c core/rng.c core/queue/queue.c core/net/client.c
+SRCS = core/tetris.c core/input.c core/rng.c core/queue/queue.c core/net/client.c core/net/buffer.c core/net/packets.c
 
 # Build
 BUILD_DIR = build

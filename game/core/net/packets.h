@@ -2,10 +2,17 @@
  * @file        packets.h
  * @brief       Net packet with input data
  */
+#ifndef PACKETS_H
+#define PACKETS_H
 
 #include "../input.h"
+
 #include "packet_payloads.h"
+#include "buffer.h"
+
 #include <stddef.h>
+
+#define MAX_PACKET_SIZE 1024
 
 // thanks jdh, i hate it https://gist.github.com/jdah/1ae0048faa2c627f7f5cb1b68f7a2c02
 
@@ -100,17 +107,14 @@ typedef struct type_desc
         offset = 0
     }
  */
-const type_desc_t types[] = {
-    PACKET_TYPES_ITER(DO_TYPE_DESC)
-};
+extern type_desc_t types[];
 
-/**
- * What's sent to the server, the time the event was registered 
- * and what event it was
- */
-typedef struct {
-    // Client identification
-    unsigned int id; 
-    int time;
-    input_event_type input;
-} input_packet;
+// Serialization
+
+void serialize_field(buffer_t* buffer, const field_desc_t* field, void* base);
+void serialize_packet(buffer_t* buffer, packet_types_t* packet);
+
+void deserialize_field(reader_t* buffer, const field_desc_t* field, void* base);
+void deserialize_packet(reader_t* buffer, packet_types_t* out);
+
+#endif

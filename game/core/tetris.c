@@ -9,6 +9,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -377,6 +378,25 @@ void tetris_init(tetris_board* game, int rows, int cols, unsigned int seed, char
 }
 
 void tetris_bind_game(tetris_board* game, udp_client* client) {
+
+    if (client) {
+        // Send connect
+        client_send(client, &(packet_types_t) {
+            .type = PACKET_TYPE_CONNECT,
+            .connect = {
+                .username = strdup(game->name)
+            }
+        });
+    } else {
+        // Send disconnect
+        client_send(client, &(packet_types_t) {
+            .type = PACKET_TYPE_DISCONNECT,
+            .disconnect = {
+                .username = strdup(game->name)
+            }
+        });
+    }
+
     game->server = client;
 }
 

@@ -19,11 +19,11 @@ void register_input(input_event_type action, tetris_board* game) {
 
     // Dup input into socket if provided
     if (game->server) {
-        client_send(game->server, &(input_packet) {
-            .id = atoi(game->name),
-            .input = action,
-            .time = time(NULL)
-        }, sizeof(input_packet));
+        
+        // client_send(game->server, &(packet_types_t) {
+        //     .none = {},
+        //     .type = PACKET_TYPE_NONE
+        // });
     }
 }
 

@@ -6,10 +6,18 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <assert.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <unistd.h>
+
+buffer_t global_buffer = {
+    .data = NULL,
+    .size = 0,
+    .capacity = MAX_PACKET_SIZE,
+};
 
 int client_init(udp_client* client, const char* host, int port){
 
@@ -33,12 +41,21 @@ int client_init(udp_client* client, const char* host, int port){
     // Make socket non-blocking
     fcntl(client->sockfd, F_SETFL, O_NONBLOCK);
 
+    // Fill global buffer
+    global_buffer.data = malloc(MAX_PACKET_SIZE);
+    assert(global_buffer.data);
+
     return 0;
 }
 
-int client_send(udp_client* client, const void* data, int size)
+// ts better never be called before init or I'm FINISHED
+int client_send(udp_client* client, packet_types_t* p)
 {
-    return send(client->sockfd, data, size, 0);
+    // reset buffer and serialize
+    global_buffer.size = 0;
+    serialize_packet(&global_buffer, p);
+    
+    return send(client->sockfd, global_buffer.data, global_buffer.size, 0);
 }
 
 int client_receive(udp_client* client, void* buffer, int buffer_size)

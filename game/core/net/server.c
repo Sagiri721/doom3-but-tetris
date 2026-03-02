@@ -6,10 +6,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#include <stdlib.h>
 
 #include "packets.h"
 
@@ -38,38 +41,63 @@ int server(void)
 
     printf("Server listening on port %d\n", PORT);
 
-    while (1) {
-        game_packet packet;
+    while (1)
+    {
+        uint8_t buffer[MAX_PACKET_SIZE];
 
         socklen_t len = sizeof(cliaddr);
-
-        ssize_t recvlen = recvfrom(
-            sockfd,
-            &packet,
-            sizeof(packet),
-            0,
-            (struct sockaddr*)&cliaddr,
-            &len
-        );
+        size_t recvlen = recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*)&cliaddr, &len);
 
         if (recvlen < 0) {
             perror("recvfrom");
             continue;
         }
 
-        if (recvlen != sizeof(game_packet)) {
-            printf("Warning: unexpected packet size (%ld bytes)\n", recvlen);
-            continue;
-        }
+        printf("Raw bytes:\n");
 
-        printf("Packet received:\n");
+        for (size_t i = 0; i < recvlen; i++) {
+            printf("%02X ", buffer[i]);
+        }
+        printf("\n");
+
+        printf("Packet received (%ld bytes)\n", recvlen);
         printf("  From: %s:%d\n",
                inet_ntoa(cliaddr.sin_addr),
                ntohs(cliaddr.sin_port));
 
-        printf("  Player ID: %d\n", packet.id);
-        printf("  Input: %d\n", packet.input);
-        printf("  Time: %d\n", packet.time);
+        reader_t reader = {
+            .data = buffer,
+            .size = recvlen,
+            .pos  = 0
+        };
+
+        packet_types_t packet = {};
+
+        deserialize_packet(&reader, &packet);
+
+        switch (packet.type)
+        {
+            case PACKET_TYPE_CONNECT:
+                printf("CONNECT: username=%s\n",
+                       packet.connect.username);
+
+                free(packet.connect.username);                    
+                break;
+
+            case PACKET_TYPE_DISCONNECT:
+                printf("DISCONNECT: username=%s\n",
+                       packet.disconnect.username);
+
+                free(packet.disconnect.username);                    
+
+                break;
+
+            case PACKET_TYPE_NONE:
+            default:
+                printf("NONE or unknown packet\n");
+                break;
+        }
+
         printf("\n");
     }
 

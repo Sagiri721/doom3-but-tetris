@@ -7,6 +7,12 @@
 
 #include <netinet/in.h>
 
+#include "packets.h"
+#include "buffer.h"
+
+// I was gonna make this __thread but it made the game crash
+extern buffer_t global_buffer;
+
 typedef struct {
     int sockfd;
     struct sockaddr_in server_addr;
@@ -16,7 +22,7 @@ typedef struct {
 int client_init(udp_client* client, const char* ip, int port);
 
 // Send raw data
-int client_send(udp_client* client, const void* data, int size);
+int client_send(udp_client* client, packet_types_t* data);
 
 // Receive data (non-blocking)
 int client_receive(udp_client* client, void* buffer, int buffer_size);

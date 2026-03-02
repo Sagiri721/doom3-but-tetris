@@ -2,6 +2,8 @@
  * @file        packet_payloads.h
  * @brief       Definr payloads for each packet
  */
+#ifndef PACKET_PAYLOADS_H
+#define PACKET_PAYLOADS_H
 
 // Packet payloads
 typedef struct connect {
@@ -19,3 +21,5 @@ typedef struct disconnect {
 typedef struct none {
 #define NONE_FIELDS(_F, ...)
 } none_t;
+
+#endif
