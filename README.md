@@ -3,7 +3,13 @@
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black)
 ![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=F0F0F0)
 
-A tetris game in C with sokol gp inspired by Doom 3 architecture
+A tetris game in C with sokol gp inspired by Quake3 architecture (Mac build NOT tested !!!!)
+
+### Dependencies
+- [Sokol (+ Sokol gp)]((https://github.com/edubart/sokol_gp))
+- [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h)
+- [stb_vorbis.c](https://github.com/nothings/stb/blob/master/stb_vorbis.c)
+- [tinycthread](https://github.com/tinycthread/tinycthread)
 
 ## How to build
 **Requirements:**
@@ -12,15 +18,23 @@ A tetris game in C with sokol gp inspired by Doom 3 architecture
 **Steps:**
 
 1. After cloning, run `git submodule update --init --recursive` to include [sokol_gp](https://github.com/edubart/sokol_gp)
+2. Add [sokol_audio.h](https://github.com/floooh/sokol/blob/master/sokol_audio.h) to `client\src\sokol_gp\thirdparty`
+2. (if needed) You may need to download graphics backends (X11, Opengl, et al.) and audio drivers (asla)
+3. `cd game` ; `make`
+4. `cd client` ; `make`
+5. `.\client\build\app.exe` || `.\client\build\app`
+
+**Note**: Makefiles are platform independent (not tested on mac)
 
 ## Features
-- Seperate game core and client implementation
-- Doom 3 style input queue
+- Seperate game core and client implementation (dynamic linking)
+- Quake3 style input queue
 - Custom bitmap font renderer (on top of stb)
 - Custom ogg player (on top of stb)
 - Menu stack
 - Multi threading (render & audio)
+- Basic (but extensible) Tetris AI and input providing
 
 ### Goals
-1. Doom 3 style server-client bots
+1. Quake3 style server-client bots
 2. Multiplayer via the network input channel
