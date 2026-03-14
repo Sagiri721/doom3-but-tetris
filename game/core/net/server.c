@@ -12,11 +12,186 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <assert.h>
+#include <string.h>
 #include <stdlib.h>
 
-#include "packets.h"
+#include "lib/tinycthread.h"
+
+#include "tetris.h"
+#include "utils.h"
+#include "net/packets.h"
 
 #define PORT 5000
+
+thrd_t server_thread;
+
+struct server_data {
+    struct sockaddr_in servaddr, cliaddr;
+    int sockfd;
+};
+
+void print_board(const tetris_board* game) {
+    if (!game || !game->board) {
+        printf("[board not initialized]\n");
+        return;
+    }
+
+    printf("\033[2J\033[H");  
+
+    printf("=== %s | lvl:%d pts:%d lines:%d %s ===\n",
+        game->name ? game->name : "?",
+        game->level,
+        game->points,
+        game->stats.lines_cleared,
+        game->game_over ? "GAME OVER" : "");
+
+    // Top border
+    printf("+");
+    for (size_t x = 0; x < game->cols; x++) printf("--");
+    printf("+\n");
+
+    for (size_t y = 0; y < game->rows; y++) {
+        printf("|");
+        for (size_t x = 0; x < game->cols; x++) {
+            char cell = index_cell(game, x, y);
+
+            // Check if current piece occupies this cell
+            char is_piece = 0;
+            for (int p = 0; p < TETRIS; p++) {
+                position c = TETROMINOS[game->current.type][game->current.rot][p];
+                if ((int)(c.x + game->current.pos.x) == (int)x &&
+                    (int)(c.y + game->current.pos.y) == (int)y) {
+                    is_piece = 1;
+                    break;
+                }
+            }
+
+            if (is_piece)        printf("[]");
+            else if (cell == 0)  printf(" .");
+            else                 printf("##");
+        }
+        printf("|\n");
+    }
+
+    // Bottom border
+    printf("+");
+    for (size_t x = 0; x < game->cols; x++) printf("--");
+    printf("+\n");
+
+    // Next piece preview
+    printf("next: ");
+    static const char* names[] = {"I","J","L","O","S","T","Z"};
+    if (game->next.type < NUM_TETROMINOS)
+        printf("%s", names[game->next.type]);
+    printf("\n\n");
+}
+
+int server_loop(void* args) {
+    
+    struct server_data* data = (struct server_data*) args;
+    assert(data);
+
+    printf("Server listening on port %d\n", PORT);
+
+    tetris_board games[2];
+    uint32_t last_input_time[2] = {0};
+
+    while (1)
+    {
+        uint8_t buffer[MAX_PACKET_SIZE];
+
+        socklen_t len = sizeof(data->cliaddr);
+        size_t recvlen = recvfrom(data->sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*)&data->cliaddr, &len);
+
+        if (recvlen < 0) {
+            perror("recvfrom");
+            continue;
+        }
+
+        printf("Raw bytes:\n");
+
+        for (size_t i = 0; i < recvlen; i++) {
+            printf("%02X ", buffer[i]);
+        }
+        printf("\n");
+
+        printf("Packet received (%ld bytes)\n", recvlen);
+        printf("  From: %s:%d\n",
+               inet_ntoa(data->cliaddr.sin_addr),
+               ntohs(data->cliaddr.sin_port));
+
+        reader_t reader = {
+            .data = buffer,
+            .size = recvlen,
+            .pos  = 0
+        };
+
+        packet_types_t packet = {};
+
+        deserialize_packet(&reader, &packet);
+        //        printf("%d\n", packet.type);
+        
+        switch (packet.type)
+        {
+            case PACKET_TYPE_CONNECT:
+                printf("CONNECT: username=%s time=%ld\n",   
+                packet.connect.username, packet.connect.connect_time);
+                
+                int b = games[0].name ? 1 : 0;
+                tetris_board* game = &games[b];
+                
+                tetris_init(game, ROWS, COLS, 0, strdup(packet.connect.username));
+
+                free(packet.connect.username);
+                break;
+
+            case PACKET_TYPE_DISCONNECT:
+                printf("DISCONNECT: username=%s time=%ld\n",
+                       packet.disconnect.username, packet.disconnect.disconnect_time);
+
+                for (size_t i = 0; i < 2; i++) {
+                    if (
+                        games[i].name && 
+                        strcmp(games[i].name, packet.disconnect.username) == 0
+                    ) {
+                        tetris_destroy(&games[i]);
+                    }
+                }
+
+                free(packet.disconnect.username);
+                break;
+            case PACKET_TYPE_SEND_INPUT:
+                printf("INPUT: username=%s input=%ld\n",
+                    packet.send_input.username, packet.send_input.input);
+
+                for (size_t i = 0; i < 2; i++) {
+                    if (games[i].name &&
+                        strcmp(games[i].name, packet.send_input.username) == 0
+                    ) {
+
+                        uint32_t now = packet.send_input.input_time;
+                        float dt = last_input_time[i] ? (now - last_input_time[i]) / 1000.0f : 0.0f;
+                        last_input_time[i] = now;
+                        
+                        enqueue(&games[i].input_queue, packet.send_input.input);
+                        tetris_process_input_queue(&games[i], dt);
+                    }
+                }
+                free(packet.send_input.username);
+                break;
+            default:
+                printf("NONE or unknown packet\n");
+                break;
+        }
+
+        print_board(&games[0]);
+
+        printf("\n");
+    }
+
+    return 0;
+}
 
 int server(void)
 {
@@ -39,67 +214,14 @@ int server(void)
         exit(EXIT_FAILURE);
     }
 
-    printf("Server listening on port %d\n", PORT);
+    struct server_data svdata = (struct server_data) {
+        .cliaddr = cliaddr,
+        .servaddr = servaddr,
+        .sockfd = sockfd
+    };
 
-    while (1)
-    {
-        uint8_t buffer[MAX_PACKET_SIZE];
-
-        socklen_t len = sizeof(cliaddr);
-        size_t recvlen = recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*)&cliaddr, &len);
-
-        if (recvlen < 0) {
-            perror("recvfrom");
-            continue;
-        }
-
-        printf("Raw bytes:\n");
-
-        for (size_t i = 0; i < recvlen; i++) {
-            printf("%02X ", buffer[i]);
-        }
-        printf("\n");
-
-        printf("Packet received (%ld bytes)\n", recvlen);
-        printf("  From: %s:%d\n",
-               inet_ntoa(cliaddr.sin_addr),
-               ntohs(cliaddr.sin_port));
-
-        reader_t reader = {
-            .data = buffer,
-            .size = recvlen,
-            .pos  = 0
-        };
-
-        packet_types_t packet = {};
-
-        deserialize_packet(&reader, &packet);
-
-        switch (packet.type)
-        {
-            case PACKET_TYPE_CONNECT:
-                printf("CONNECT: username=%s\n",
-                       packet.connect.username);
-
-                free(packet.connect.username);                    
-                break;
-
-            case PACKET_TYPE_DISCONNECT:
-                printf("DISCONNECT: username=%s\n",
-                       packet.disconnect.username);
-
-                free(packet.disconnect.username);                    
-
-                break;
-
-            case PACKET_TYPE_NONE:
-            default:
-                printf("NONE or unknown packet\n");
-                break;
-        }
-
-        printf("\n");
-    }
+    thrd_create(&server_thread, server_loop, &svdata);
+    thrd_join(server_thread, NULL);
 
     return 0;
 }

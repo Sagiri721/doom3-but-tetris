@@ -19,7 +19,16 @@ else
 endif
 
 # Source files
-SRCS = core/tetris.c core/input.c core/rng.c core/queue/queue.c core/net/client.c core/net/buffer.c core/net/packets.c
+SRCS = \
+    core/tetris.c \
+    core/input.c  \
+    core/rng.c \
+    core/utils.c \
+    core/queue/queue.c \
+    core/net/client.c \
+    core/net/buffer.c \
+    core/net/packets.c \
+    core/lib/tinycthread.c \
 
 # Build
 BUILD_DIR = build

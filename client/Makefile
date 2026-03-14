@@ -39,7 +39,6 @@ SOURCES = \
 	src/input/providers/input_keyboard.c \
 	src/input/providers/input_cpu.c \
     src/gfx/render.c \
-	src/queue/queue.c \
 	src/gfx/image.c \
 	src/gfx/bitmap_text.c \
 	src/bot/ai.c \
@@ -49,7 +48,6 @@ SOURCES = \
 	src/gfx/menu.c \
 	src/audio/stb_vorbis.c \
 	src/audio/ogg_player.c \
-	src/lib/tinycthread.c \
 
 GAME_CORE_PATH = $(GAME_CORE_LIB)/$(LIB_DIR)
 GAME_CORE_LINK = -L$(GAME_CORE_PATH) -lgame_core

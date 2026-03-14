@@ -8,11 +8,9 @@ CORE_LIB = game_core/linux/libgame_core.so
 all: $(SERVER)
 
 $(SERVER): main.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(SERVER) main.c \
-	$(CORE_LIB) \
-	-Wl,-rpath,'$$ORIGIN/game_core/linux'
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(SERVER) main.c $(CORE_LIB) -Wl,-rpath,'$$ORIGIN/game_core/linux'
 
-run: $(SERVER)
+run: clean $(SERVER)
 	./$(SERVER)
 
 clean:

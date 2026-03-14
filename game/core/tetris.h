@@ -9,7 +9,12 @@
 #include "queue/queue.h"
 #include "rng.h"
 #include "input.h"
-#include "net/client.h"
+
+typedef struct packet_types packet_types_t;
+typedef struct udp_client udp_client;
+
+#define ROWS 20
+#define COLS 10
 
 #define TETRIS 4
 #define NUM_TETROMINOS 7
@@ -124,6 +129,7 @@ extern float LEVEL_SPEED[NUM_LEVELS];
 
 void tetris_init(tetris_board* game, int rows, int cols, unsigned int seed, char* name); // Start a tetris board
 void tetris_update(tetris_board* game, float dt);
+void tetris_process_input_queue(tetris_board* game, float dt);
 void tetris_destroy(tetris_board* game);
 
 // Bind a game to a socket, aka start dupping input into the socket

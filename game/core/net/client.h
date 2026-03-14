@@ -13,7 +13,7 @@
 // I was gonna make this __thread but it made the game crash
 extern buffer_t global_buffer;
 
-typedef struct {
+typedef struct udp_client {
     int sockfd;
     struct sockaddr_in server_addr;
 } udp_client;

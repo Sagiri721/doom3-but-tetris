@@ -11,8 +11,8 @@
 #define STB_VORBIS_HEADER_ONLY
 #include "stb_vorbis.c" // I DIDNT KNOW YOU COULD DO THIS !????
 
-#include "../queue/queue.h"
-#include "../lib/tinycthread.h"
+#include "queue/queue.h"
+#include "lib/tinycthread.h"
 
 typedef struct {
     int channels;

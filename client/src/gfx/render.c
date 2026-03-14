@@ -42,7 +42,7 @@
 #define CLEAR_COLOUR_G 0.0f
 #define CLEAR_COLOUR_B 0.0f
 
-#define CELL_SIZE 32
+#define CELL_SIZE 28
 
 float COLOURS[NUM_TETROMINOS + 1][3] = {
     {1, 0, 0},          // Red      (I)
@@ -164,8 +164,6 @@ void render_end() {
 void render_cell(float x, float y, int type, float alpha) {
     
     // Get color based on tetromino type
-    if (type == 8)
-        printf("Rendering cell of type 8 at (%f, %f)\n", x, y);
     float r = COLOURS[type][0];
     float g = COLOURS[type][1];
     float b = COLOURS[type][2];
@@ -323,6 +321,7 @@ void render_game(tetris_board* game, unsigned int offset, unsigned int boards) {
 
     sgp_set_blend_mode(SGP_BLENDMODE_ADD);
     render_tetromino(phantom, board_x, board_y, 0.3f);
+    sgp_set_blend_mode(SGP_BLENDMODE_BLEND);
 
     // Draw next piece(s)
     for (size_t i = 0; i < game->settings.preview_count; i++) {
@@ -333,8 +332,6 @@ void render_game(tetris_board* game, unsigned int offset, unsigned int boards) {
             .pos = (position){.x = -3, .y = 1 + (i * 4)}
         }, board_x, board_y, 1.0f);
     }
-
-    sgp_set_blend_mode(SGP_BLENDMODE_BLEND);
 
     // Draw hold piece
     if (game->has_hold) {

@@ -6,24 +6,29 @@
 #include "input.h"
 #include "queue/queue.h"
 #include "tetris.h"
-#include "net/packets.h"
+#include "net/client.h"
+#include "utils.h"
 
 #include <stdlib.h>
-#include <time.h>
+#include <string.h>
 
 void register_input(input_event_type action, tetris_board* game) {
-
+    
+    // Use socket if provided
     if(!enqueue(&game->input_queue, action)) {
         // Handle this maybe?
     }
 
-    // Dup input into socket if provided
+    // Relay input to server if available
     if (game->server) {
-        
-        // client_send(game->server, &(packet_types_t) {
-        //     .none = {},
-        //     .type = PACKET_TYPE_NONE
-        // });
+        client_send(game->server, &(packet_types_t) {
+            .type = PACKET_TYPE_SEND_INPUT,
+            .send_input = {
+                .input = action,
+                .username = strdup(game->name),
+                .input_time = now_ms()
+            },
+        });
     }
 }
 

@@ -21,9 +21,6 @@
 #include <time.h>
 #include <string.h>
 
-#define ROWS 20
-#define COLS 10
-
 static udp_client net_client;
 static char net_buffer[256];
 
@@ -255,13 +252,15 @@ void update_game() {
         return;
     }
 
+    tetris_board* game;
+
     switch (current_game_mode)
     {
         case GM_CHALLENGE:
         case GM_MARATHON:
 
             // Update the game state
-            tetris_board* game = &games[0];
+            game = &games[0];
             tetris_update(game, time);
             pump_input(&providers[0], game);
 

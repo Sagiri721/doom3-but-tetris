@@ -6,6 +6,7 @@
 #define PACKETS_H
 
 #include "../input.h"
+#include "../tetris.h"
 
 #include "packet_payloads.h"
 #include "buffer.h"
@@ -26,10 +27,11 @@
  *  - Packet id
  *  - Extra args for payload
  */ 
-#define PACKET_TYPES_ITER(_F, ...)                          \
-    _F(NONE,            none,           0, __VA_ARGS__)     \
-    _F(CONNECT,         connect,        1, __VA_ARGS__)     \
-    _F(DISCONNECT,      disconnect,     2, __VA_ARGS__)
+#define PACKET_TYPES_ITER(_F, ...)                                      \
+    _F(NONE,                none,           0, __VA_ARGS__)             \
+    _F(CONNECT,             connect,        1, __VA_ARGS__)             \
+    _F(DISCONNECT,          disconnect,     2, __VA_ARGS__)             \
+    _F(SEND_INPUT,          send_input,     3, __VA_ARGS__)
 
 #define DECL_TYPES_ENUM_MEMBER(uc, lc, i, ...)  \
     PACKET_TYPE_##uc = i,
@@ -41,7 +43,7 @@ typedef enum {
 
 // Now this makes a big ass union using each packet type using the type bellow as a descriminator
 // For later identification
-typedef struct {
+typedef struct packet_types {
     union 
     {
 #define PACKET_TYPES_UNION_MEMBER(uc, lc, ...) lc##_t lc;
@@ -55,6 +57,7 @@ typedef enum field_type {
     FIELD_TYPE_INT,
     FIELD_TYPE_FLOAT,
     FIELD_TYPE_STR,
+    FIELD_TYPE_TIME
 } field_type_t;
 
 
@@ -62,7 +65,9 @@ typedef enum field_type {
 #define TYPE_TO_FIELD_TYPE(x) _Generic(*((x*) NULL),    \
     int: FIELD_TYPE_INT,                                \
     float: FIELD_TYPE_FLOAT,                            \
-    const char*: FIELD_TYPE_STR                         \
+    const char*: FIELD_TYPE_STR,                        \
+    time_t: FIELD_TYPE_TIME,                            \
+    input_event_type: FIELD_TYPE_INT                    \
 )
 
 // Now this is some funny reflection overhead struct thing

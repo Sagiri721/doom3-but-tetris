@@ -41,6 +41,7 @@ void close_decoder(ogg_audio_player* player) {
 int push_loop(void* args) {
 
     ogg_audio_player* player = (ogg_audio_player*) args;
+    assert(args);
     
     float frames_buffer[4096 * 2];
     float* buffer = frames_buffer;

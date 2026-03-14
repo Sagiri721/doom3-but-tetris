@@ -23,6 +23,7 @@ void serialize_field(buffer_t* buffer, const field_desc_t* field, void* base) {
     // Whatever bro
     uint32_t v;
     float v2;
+    time_t v3;
     const char* str;
 
     switch (field->type)
@@ -42,7 +43,11 @@ void serialize_field(buffer_t* buffer, const field_desc_t* field, void* base) {
             write_u16(buffer, len);
             write_bytes(buffer, str, len);
             break;
-    }
+        case FIELD_TYPE_TIME:
+            v3 = *(time_t*)field_ptr;
+            write_bytes(buffer, &v3, sizeof(time_t)); // Consider making a write_u64
+            break;
+    }   
 }
 
 void serialize_packet(buffer_t* buffer, packet_types_t* packet) {
@@ -51,9 +56,11 @@ void serialize_packet(buffer_t* buffer, packet_types_t* packet) {
     write_u16(buffer, (short) packet->type);
 
     const type_desc_t* desc = &types[packet->type];
+    void* payload = (void*) &packet->none;  
+
     for (size_t i = 0; i < 16 /*Hard coded limit from struct*/ && desc->fields[i].name; i++)
     {
-        serialize_field(buffer, &desc->fields[i], packet);
+        serialize_field(buffer, &desc->fields[i], payload);
     }
 }
 
@@ -65,6 +72,7 @@ void deserialize_field(reader_t* buffer, const field_desc_t* field, void* base)
 
     uint32_t v;
     float v2;
+    time_t v3;
     char* str;
     uint16_t len;
 
@@ -94,20 +102,27 @@ void deserialize_field(reader_t* buffer, const field_desc_t* field, void* base)
             *(char**)field_ptr = str;
                         
             break;
+        case FIELD_TYPE_TIME:
+
+            read_bytes(buffer, &v3, sizeof(time_t));
+            *(time_t*)field_ptr = v3;
+            
+            break;
     }
 }
 
-void deserialize_packet(reader_t* buffer, packet_types_t* out)
-{
+void deserialize_packet(reader_t* buffer, packet_types_t* out) {
 
     // Read packet type
     uint16_t pt;
     read_u16(buffer, &pt);
-
+    
     out->type = (packet_type) pt;
-
     const type_desc_t* desc = &types[pt];
+
+    void* payload = (void*) &out->none;
+
     for (size_t i = 0; i < 16 && desc->fields[i].name; i++) {
-        deserialize_field(buffer, &desc->fields[i], out);
+        deserialize_field(buffer, &desc->fields[i], payload);
     }
 }

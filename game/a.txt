@@ -1,0 +1,30 @@
+core/input.c:20:9: error: call to undeclared function 'client_send'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+   20 |         client_send(game->server, &(packet_types_t) {
+      |         ^
+core/net/packets.c:15:23: error: controlling expression type 'typeof (((game_state_t *)((void *)0))->game)' (aka 'char *') not compatible with any generic association type
+   15 |     PACKET_TYPES_ITER(DO_TYPE_DESC)
+      |     ~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+core/net/packets.h:35:5: note: expanded from macro 'PACKET_TYPES_ITER'
+   35 |     _F(GAME_STATE,          game_state,     4, __VA_ARGS__)
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+core/net/packets.h:104:36: note: expanded from macro 'DO_TYPE_DESC'
+  104 |     [i] = { .fields = {uc##_FIELDS(DO_FIELD_DESC, lc##_t)} },
+      |                        ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~
+core/net/packet_payloads.h:37:5: note: expanded from macro 'GAME_STATE_FIELDS'
+   37 |     _F(game, __VA_ARGS__)
+      |     ^~~~~~~~~~~~~~~~~~~~~
+core/net/packets.h:97:17: note: expanded from macro 'DO_FIELD_DESC'
+   97 |         .type = TYPE_TO_FIELD_TYPE(TYPE_OF_FIELD(pname, fname)),\
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+core/net/packets.h:67:40: note: expanded from macro 'TYPE_TO_FIELD_TYPE'
+   67 | #define TYPE_TO_FIELD_TYPE(x) _Generic(*((x*) NULL),    \
+      |                                        ^~~~~~~~~~~~
+core/net/packets.c:29:13: warning: enumeration value 'FIELD_TYPE_BOARD' not handled in switch [-Wswitch]
+   29 |     switch (field->type)
+      |             ^~~~~~~~~~~
+core/net/packets.c:77:13: warning: enumeration value 'FIELD_TYPE_BOARD' not handled in switch [-Wswitch]
+   77 |     switch (field->type)
+      |             ^~~~~~~~~~~
+2 warnings and 1 error generated.
+make: *** [Makefile:33: libgame_core.so] Error 1
+1 error generated.

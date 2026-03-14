@@ -6,6 +6,7 @@
 #include "tetris.h"
 #include "input.h"
 #include "rng.h"
+#include "net/client.h"
 
 #include <assert.h>
 #include <math.h>
@@ -384,7 +385,8 @@ void tetris_bind_game(tetris_board* game, udp_client* client) {
         client_send(client, &(packet_types_t) {
             .type = PACKET_TYPE_CONNECT,
             .connect = {
-                .username = strdup(game->name)
+                .username = strdup(game->name),
+                .connect_time = time(NULL),
             }
         });
     } else {
@@ -392,7 +394,8 @@ void tetris_bind_game(tetris_board* game, udp_client* client) {
         client_send(client, &(packet_types_t) {
             .type = PACKET_TYPE_DISCONNECT,
             .disconnect = {
-                .username = strdup(game->name)
+                .username = strdup(game->name),
+                .disconnect_time = time(NULL),
             }
         });
     }
@@ -400,8 +403,16 @@ void tetris_bind_game(tetris_board* game, udp_client* client) {
     game->server = client;
 }
 
+#define MOVE_COOLDOWN 0.08f
+#define DROP_COOLDOWN 0.03f
+
 void tetris_process_input_queue(tetris_board* game, float dt) {
     int action;
+
+    // Increment counters
+    game->counters.move_timer += dt;
+    game->counters.gravity_timer += dt;
+    game->counters.drop_timer += dt;
     
     while (!is_empty(&game->input_queue)) {
         
@@ -411,10 +422,12 @@ void tetris_process_input_queue(tetris_board* game, float dt) {
 
         switch (action) {
             case IE_MOVE_LEFT:
-                tetris_move(game, -1, dt);
-                break;
             case IE_MOVE_RIGHT:
-                tetris_move(game, 1, dt);
+                if (game->counters.move_timer < MOVE_COOLDOWN) break;
+
+                tetris_move(game, action == IE_MOVE_LEFT ? -1 : 1, dt);
+                game->counters.move_timer = 0;
+                
                 break;
             case IE_ROTATE_RIGHT:
                 tetris_rotate(game, R_RIGHT, dt);
@@ -423,7 +436,11 @@ void tetris_process_input_queue(tetris_board* game, float dt) {
                 tetris_rotate(game, R_LEFT, dt);
                 break;
             case IE_DROP:
+                if (game->counters.drop_timer < DROP_COOLDOWN) break;
+            
                 tetris_drop(game, dt);
+                game->counters.drop_timer = 0.0f;
+            
                 break;
             case IE_GRAVITY:
                 tetris_apply_gravity(game);
@@ -448,8 +465,6 @@ void tetris_update(tetris_board* game, float dt) {
     // If game over, nothing to do
     if (game->game_over) return;
 
-    game->counters.gravity_timer += dt;
-
     float speed = sample_speed_table(game);
     if (game->counters.gravity_timer > speed) {
 
@@ -457,7 +472,7 @@ void tetris_update(tetris_board* game, float dt) {
         register_input(IE_GRAVITY, game);
 
         // Reset timer
-        game->counters.gravity_timer = 0.0f;
+        game->counters.gravity_timer -= speed;
     }
 
     // Process input queue
@@ -495,16 +510,8 @@ position calculate_drop_preview(tetromino* piece, tetris_board* game) {
 }
 
 // Tetris events
-#define MOVE_COOLDOWN 0.08f
-#define DROP_COOLDOWN 0.03f
-
 void tetris_move(tetris_board* game, int direction, float dt) {
-    game->counters.move_timer += dt;
-
-    if (game->counters.move_timer < MOVE_COOLDOWN) return;
-
     move_tetromino(game, &game->current, direction, 0);
-    game->counters.move_timer = 0.0f;
 }
 
 void tetris_rotate(tetris_board* game, rot_dir dir, float dt) {
@@ -558,16 +565,10 @@ void tetris_apply_gravity(tetris_board* game) {
 
 void tetris_drop(tetris_board* game, float dt) {
 
-    game->counters.drop_timer += dt;
-
-    if (game->counters.drop_timer < DROP_COOLDOWN) return;
-
     // We check for collision just to make sure the grace period is still applied
     if (move_tetromino(game, &game->current, 0, 1)) {
         tetris_apply_gravity(game);
     }
-
-    game->counters.drop_timer = 0.0f;
 }
 
 void tetris_hold(tetris_board *game) {

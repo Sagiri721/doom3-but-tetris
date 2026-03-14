@@ -1,0 +1,45 @@
+@startuml clsrv
+title "Client-Server game protocol (local)"  
+
+actor Player
+participant Client 
+participant Server
+
+Player -> Client: connect to game
+
+Client -> Server: start server on 127.0.0.1:{port}
+Client -> Server: SEND player connected {username}
+Server -> Server: tetris_init for player
+Client -> Server: SEND player connected {adversary (bot)}
+Server -> Server: tetris_init for adversary
+
+loop
+
+group input logic
+
+Player -> Client: press keyboard
+Client -> Server: SEND player input {input}
+Server -> Server: validate input
+Server -> Server: enqueue input
+
+else sync logic
+
+Server -> Server: tetris_update({player})
+Server -> Server: tetris_update({adversary})
+
+Server -> Client: BROADCAST game state
+Client -> Client: process_network_input
+Client -> Client: sync_boards
+
+alt game over
+Server -> Server: clean up
+Server -> Client: BROADCAST game over
+Client -> Client: clean up
+end
+
+end
+end
+
+Client -> Player: disconnect from game
+
+@enduml
