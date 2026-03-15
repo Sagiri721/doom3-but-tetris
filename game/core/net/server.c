@@ -18,8 +18,7 @@
 
 #include "lib/tinycthread.h"
 
-#include "tetris.h"
-#include "utils.h"
+#include "lobby.h"
 #include "net/packets.h"
 
 #define PORT 5000
@@ -94,8 +93,8 @@ int server_loop(void* args) {
 
     printf("Server listening on port %d\n", PORT);
 
-    tetris_board games[2];
-    uint32_t last_input_time[2] = {0};
+    // The lobby this thread is responsible for
+    lobby_t lobby = {0};
 
     while (1)
     {
@@ -137,55 +136,39 @@ int server_loop(void* args) {
             case PACKET_TYPE_CONNECT:
                 printf("CONNECT: username=%s time=%ld\n",   
                 packet.connect.username, packet.connect.connect_time);
-                
-                int b = games[0].name ? 1 : 0;
-                tetris_board* game = &games[b];
-                
-                tetris_init(game, ROWS, COLS, 0, strdup(packet.connect.username));
+
+                spawn_player(&lobby, packet.connect.username, 0);
 
                 free(packet.connect.username);
                 break;
 
             case PACKET_TYPE_DISCONNECT:
                 printf("DISCONNECT: username=%s time=%ld\n",
-                       packet.disconnect.username, packet.disconnect.disconnect_time);
+                    packet.disconnect.username, packet.disconnect.disconnect_time);
 
-                for (size_t i = 0; i < 2; i++) {
-                    if (
-                        games[i].name && 
-                        strcmp(games[i].name, packet.disconnect.username) == 0
-                    ) {
-                        tetris_destroy(&games[i]);
-                    }
-                }
+                remove_player(&lobby, packet.disconnect.username);
 
                 free(packet.disconnect.username);
                 break;
-            case PACKET_TYPE_SEND_INPUT:
-                printf("INPUT: username=%s input=%ld\n",
+
+            case PACKET_TYPE_SEND_INPUT: {
+                printf("INPUT: username=%s input=%d\n",
                     packet.send_input.username, packet.send_input.input);
 
-                for (size_t i = 0; i < 2; i++) {
-                    if (games[i].name &&
-                        strcmp(games[i].name, packet.send_input.username) == 0
-                    ) {
+                lobby_player_t* p = get_player(&lobby, packet.send_input.username);
+                enqueue(&p->game.input_queue, packet.send_input.input);
+                tetris_process_input_queue(&p->game);
 
-                        uint32_t now = packet.send_input.input_time;
-                        float dt = last_input_time[i] ? (now - last_input_time[i]) / 1000.0f : 0.0f;
-                        last_input_time[i] = now;
-                        
-                        enqueue(&games[i].input_queue, packet.send_input.input);
-                        tetris_process_input_queue(&games[i], dt);
-                    }
-                }
                 free(packet.send_input.username);
                 break;
+            }
             default:
                 printf("NONE or unknown packet\n");
                 break;
         }
 
-        print_board(&games[0]);
+        if (lobby.players[1].game.name)
+            print_board(&lobby.players[1].game);
 
         printf("\n");
     }

@@ -97,6 +97,7 @@ typedef struct tetris_board {
      * To store replays
      */
     queue input_queue;
+    input_validator_t validator; // Verify input validity
 
     // Game settings
     struct {
@@ -129,7 +130,7 @@ extern float LEVEL_SPEED[NUM_LEVELS];
 
 void tetris_init(tetris_board* game, int rows, int cols, unsigned int seed, char* name); // Start a tetris board
 void tetris_update(tetris_board* game, float dt);
-void tetris_process_input_queue(tetris_board* game, float dt);
+void tetris_process_input_queue(tetris_board* game);
 void tetris_destroy(tetris_board* game);
 
 // Bind a game to a socket, aka start dupping input into the socket
@@ -156,9 +157,9 @@ void tetris_goto_level(tetris_board* game, unsigned int level);
 
 // Events
 void tetris_apply_gravity(tetris_board* game);
-void tetris_move(tetris_board* game, int dx, float dt);
-void tetris_drop(tetris_board* game, float dt);
-void tetris_rotate(tetris_board* game, rot_dir dir, float dt);
+void tetris_move(tetris_board* game, int dx);
+void tetris_drop(tetris_board* game);
+void tetris_rotate(tetris_board* game, rot_dir dir);
 void tetris_hard_drop(tetris_board* game);
 void tetris_hold(tetris_board* game);
 

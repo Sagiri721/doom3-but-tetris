@@ -8,6 +8,11 @@
 
 #include "queue/queue.h"
 
+#include <stdint.h>
+
+#define MOVE_COOLDOWN_MS 80
+#define DROP_COOLDOWN_MS 30
+
 struct tetris_board;
 
 /** 
@@ -41,5 +46,13 @@ typedef struct {
 void pump_input(input_provider* provider, struct tetris_board* game);
 // Register an input event into the input queue
 void register_input(input_event_type action, struct tetris_board* game);
+
+// Verify if input is valid
+typedef struct input_validator {
+    uint32_t last_move_time;
+    uint32_t last_drop_time;
+} input_validator_t;
+
+int validate_input(input_validator_t* v, input_event_type action, uint32_t now);
 
 #endif

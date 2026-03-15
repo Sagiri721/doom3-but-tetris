@@ -4,3 +4,4 @@
 - All clear detection
 - Add -fvisibility=hidden to linux build. tetris_update should be private
 - Add tinycthread as submodule maybe
+- Add logging

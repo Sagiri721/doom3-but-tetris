@@ -28,6 +28,7 @@ SRCS = \
     core/net/client.c \
     core/net/buffer.c \
     core/net/packets.c \
+    core/net/lobby.c \
     core/lib/tinycthread.c \
 
 # Build
